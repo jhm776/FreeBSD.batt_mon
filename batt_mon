@@ -4,12 +4,24 @@
 # https://www.tansi.org/n140/batt_mon.html
 # Distributed under the Gnu Public license v2, 
 # see http://www.gnu.org/licenses/gpl-2.0.html for a copy of the license
-
 # Version 1.0
+# modified for FreeBSD/fvwm3 Aug 2020, jhm776
+# in fvwm config, size/location is set/used like this:
+# "Batt_mon"    Exec ~/swe/batt_mon/batt_mon -geometry 120x20+1234+194
 
 require 5.002;
 use Tk;
-#use strict;
+use strict;
+use warnings;
+use diagnostics;
+
+my $last_loop;
+my $life;
+my $btime;
+my $disch;
+my $rmin;
+my $text;
+
 sub tick;
 sub check_batt;
 
