@@ -1,0 +1,124 @@
+#!/usr/local/bin/perl -w
+
+# (c) 2010 by Arno Wagner <arno@wagner.name>
+# https://www.tansi.org/n140/batt_mon.html
+# Distributed under the Gnu Public license v2, 
+# see http://www.gnu.org/licenses/gpl-2.0.html for a copy of the license
+
+# Version 1.0
+
+require 5.002;
+use Tk;
+#use strict;
+sub tick;
+sub check_batt;
+
+my $MW = MainWindow->new;
+$MW->bind('<Control-c>' => \&exit);
+
+my(%tinfo) = ('w' => $MW, 't' => 'color');
+
+
+my $CW = $MW->Frame();
+
+my $l1 = $MW->Label(
+    -relief       => 'flat', 
+    -width        => 20,
+    -text => '???',
+    -bg => 'grey'
+);
+
+
+$l1->pack(-side => 'left', -fill => 'both', -expand => 'yes');
+
+$last_loop = time - 1000;  # for checks slower than the tick-loop
+
+tick;
+
+sub tick {
+    check_batt;               # main loop body
+    $MW->after(10000, \&tick); # main loop construct: Self-call after n ms
+} 
+
+
+sub check_batt {
+    my $time = time;
+    my $dtime = $time - $last_loop;
+
+    #$rmin = 0;
+
+    if ($dtime >= 10) { # loop delay in seconds
+        $last_loop = $time;
+        #print "loop body reached\n";
+        # 
+        # Determine variable values
+        #
+
+        # read battery info and state files
+        $life = `sysctl -n hw.acpi.battery.life`;
+
+        #$life = "89";
+        #print "life=$life   ";
+        
+        #$btime = "208";
+        $btime = `sysctl -n hw.acpi.battery.time`;
+        #print " btime=$btime \n";
+
+        # determine whether we are discharging
+        $disch = 0;
+
+        if ($btime == -1) {
+            $disch = 1,
+            $rmin = 0; }
+        else {
+            $rmin = int($btime);} 
+
+        #print "$disch \n";
+        #print "$rmin \n";
+        # strip new line off $life
+        $life = int($life);
+    
+        #
+        # Now display 
+        #
+        
+        if ($disch != 1) {
+            # case 1: Running on battery
+ 
+            if ($life > 35)  { $l1->configure(-bg => '#00b979'); } 
+            if ($life <= 35) { $l1->configure(-bg => 'yellow'); } 
+            if ($life < 10)  { $l1->configure(-bg => 'red'); } 
+        
+            $text = "BAT";
+            $text .= "  ";
+            $text .= "$life %";
+            $text .= "  ";
+            $text .= "$rmin";
+
+            $l1->configure(-text => $text);
+
+        } else {
+            # case 2: Running on external power
+            $l1->configure(-bg => 'grey');
+
+            if ($life == 100)  { $l1->configure(-bg => '#00b979'); } 
+            
+            $text = "AC ";
+            $text .= "  ";
+            $text .= "$life %";
+            $text .= " ";
+            #$text .= $rmin ;
+            
+            $l1->configure(-text => $text);
+            
+        }
+    }
+    
+
+}
+
+MainLoop;
+
+
+
+
