@@ -1,0 +1,1 @@
+# FreBSD.batt_mon
